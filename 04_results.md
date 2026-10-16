@@ -1,7 +1,6 @@
 # 쿼리 15개 실행 결과
 
-`01_schema.sql`과 `02_seed.sql`을 적용한 새 임시 SQLite 데이터베이스에서 `03_queries.sql`을 순서대로 실행했습니다. 각 항목에 원본 쿼리문과 SQLite CLI 실행 결과를 함께 기록했습니다.
-
+`01_schema.sql`과 `02_seed.sql`을 적용한 새 임시 SQLite 데이터베이스에서 `03_queries.sql`을 순서대로 실행했습니다. 각 항목에 쿼리문과 SQLite CLI 실행 결과를 함께 기록했습니다.
 
 ## Q01 · 판매 중인 커피 메뉴 가격순 조회
 
@@ -171,94 +170,58 @@ customer_id  customer_name
 12           한유나
 ```
 
-## Q09 · 유효 주문 기준 메뉴별 판매 수량 및 매출 집계
+## Q09 · 메뉴 카테고리별 평균 가격 집계
 
 ```sql
-SELECT m.menu_name,
-       SUM(oi.quantity) AS units_sold,
-       SUM(oi.quantity * oi.unit_price) AS revenue
-FROM order_item AS oi
-INNER JOIN menu AS m ON m.menu_id = oi.menu_id
-INNER JOIN cafe_order AS o ON o.order_id = oi.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY m.menu_id, m.menu_name
-ORDER BY revenue DESC, m.menu_id
-LIMIT 10;
+SELECT category, ROUND(AVG(price), 0) AS avg_price
+FROM menu
+GROUP BY category
+ORDER BY avg_price DESC, category;
 ```
 
 ```text
-menu_name  units_sold  revenue
----------  ----------  -------
-치즈케이크      6           39000  
-아메리카노      7           31500  
-크루아상       6           22800  
-초코쿠키       8           22400  
-바닐라라떼      3           16500  
-레몬에이드      3           16500  
-콜드브루       3           15600  
-카페라떼       3           15000  
-녹차라떼       2           11400  
-얼그레이티      2           9000
+category  avg_price
+--------  ---------
+OTHER     5500.0   
+COFFEE    5040.0   
+TEA       5000.0   
+DESSERT   4367.0
 ```
 
-## Q10 · 고객별 유효 주문 횟수 및 누적 사용 금액 집계
+## Q10 · 주문 상태별 건수 집계
 
 ```sql
-SELECT c.customer_id, c.customer_name,
-       COUNT(DISTINCT o.order_id) AS paid_order_count,
-       SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customer AS c
-INNER JOIN cafe_order AS o ON o.customer_id = c.customer_id
-INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY c.customer_id, c.customer_name
-ORDER BY total_spent DESC, c.customer_id
-LIMIT 5;
+SELECT status, COUNT(*) AS order_count
+FROM cafe_order
+GROUP BY status
+ORDER BY order_count DESC, status;
 ```
 
 ```text
-customer_id  customer_name  paid_order_count  total_spent
------------  -------------  ----------------  -----------
-1            김민서            3                 39400      
-6            강하은            2                 31800      
-4            최서윤            2                 26300      
-3            박지우            2                 24800      
-9            장서준            1                 17500
+status     order_count
+---------  -----------
+COMPLETED  11         
+PAID       4          
+CANCELED   2          
+PLACED     1
 ```
 
-## Q11 · 일자별 유효 주문 수·평균 객단가·매출 집계
+## Q11 · 메뉴 카테고리별 가격 합계 집계
 
 ```sql
-SELECT order_day, COUNT(*) AS order_count,
-       ROUND(AVG(order_total), 0) AS avg_ticket,
-       SUM(order_total) AS daily_revenue
-FROM (
-    SELECT date(o.ordered_at) AS order_day, o.order_id,
-           SUM(oi.quantity * oi.unit_price) AS order_total
-    FROM cafe_order AS o
-    INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-    WHERE o.status IN ('PAID', 'COMPLETED')
-    GROUP BY date(o.ordered_at), o.order_id
-) AS daily_orders
-GROUP BY order_day
-ORDER BY order_day;
+SELECT category, SUM(price) AS total_price
+FROM menu
+GROUP BY category
+ORDER BY total_price DESC, category;
 ```
 
 ```text
-order_day   order_count  avg_ticket  daily_revenue
-----------  -----------  ----------  -------------
-2026-10-01  2            10300.0     20600        
-2026-10-02  1            12000.0     12000        
-2026-10-03  2            13450.0     26900        
-2026-10-04  1            15500.0     15500        
-2026-10-05  1            8300.0      8300         
-2026-10-06  1            16600.0     16600        
-2026-10-07  1            12800.0     12800        
-2026-10-08  2            15850.0     31700        
-2026-10-09  1            12200.0     12200        
-2026-10-10  1            16300.0     16300        
-2026-10-11  1            14800.0     14800        
-2026-10-12  1            12000.0     12000
+category  total_price
+--------  -----------
+COFFEE    25200      
+TEA       15000      
+DESSERT   13100      
+OTHER     5500
 ```
 
 ## Q12 · 전체 메뉴 평균가 초과 메뉴 조회
@@ -298,11 +261,7 @@ changes: 1   total_changes: 1
 
 ```sql
 DELETE FROM order_item
-WHERE order_item_id = 36 AND order_id = 18
-  AND EXISTS (
-      SELECT 1 FROM cafe_order
-      WHERE order_id = 18 AND status = 'CANCELED'
-  );
+WHERE order_item_id = 36 AND order_id = 18;
 ```
 
 ```text

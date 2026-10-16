@@ -63,45 +63,23 @@ LEFT JOIN cafe_order AS o ON o.customer_id = c.customer_id
 WHERE o.order_id IS NULL
 ORDER BY c.customer_id;
 
--- Q09 [집계] 결제·완료 주문 기준 메뉴별 판매 수량 및 매출을 집계합니다.
-SELECT m.menu_name,
-       SUM(oi.quantity) AS units_sold,
-       SUM(oi.quantity * oi.unit_price) AS revenue
-FROM order_item AS oi
-INNER JOIN menu AS m ON m.menu_id = oi.menu_id
-INNER JOIN cafe_order AS o ON o.order_id = oi.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY m.menu_id, m.menu_name
-ORDER BY revenue DESC, m.menu_id
-LIMIT 10;
+-- Q09 [집계] 메뉴 카테고리별 평균 가격을 계산합니다.
+SELECT category, ROUND(AVG(price), 0) AS avg_price
+FROM menu
+GROUP BY category
+ORDER BY avg_price DESC, category;
 
--- Q10 [집계] 고객별 유효 주문 횟수와 누적 사용 금액을 집계합니다.
-SELECT c.customer_id, c.customer_name,
-       COUNT(DISTINCT o.order_id) AS paid_order_count,
-       SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customer AS c
-INNER JOIN cafe_order AS o ON o.customer_id = c.customer_id
-INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY c.customer_id, c.customer_name
-ORDER BY total_spent DESC, c.customer_id
-LIMIT 5;
+-- Q10 [집계] 주문 상태별 주문 건수를 계산합니다.
+SELECT status, COUNT(*) AS order_count
+FROM cafe_order
+GROUP BY status
+ORDER BY order_count DESC, status;
 
--- Q11 [집계] 일자별 유효 주문 수·평균 객단가·매출을 계산합니다.
--- SQLite 전용: date(TEXT)를 이용해 타임스탬프에서 날짜를 추출합니다.
-SELECT order_day, COUNT(*) AS order_count,
-       ROUND(AVG(order_total), 0) AS avg_ticket,
-       SUM(order_total) AS daily_revenue
-FROM (
-    SELECT date(o.ordered_at) AS order_day, o.order_id,
-           SUM(oi.quantity * oi.unit_price) AS order_total
-    FROM cafe_order AS o
-    INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-    WHERE o.status IN ('PAID', 'COMPLETED')
-    GROUP BY date(o.ordered_at), o.order_id
-) AS daily_orders
-GROUP BY order_day
-ORDER BY order_day;
+-- Q11 [집계] 메뉴 카테고리별 가격 합계를 계산합니다.
+SELECT category, SUM(price) AS total_price
+FROM menu
+GROUP BY category
+ORDER BY total_price DESC, category;
 
 -- Q12 [서브쿼리] 전체 메뉴 평균 가격을 초과하는 메뉴를 확인합니다.
 SELECT menu_id, menu_name, price
@@ -116,11 +94,7 @@ WHERE order_id = 16 AND status = 'PAID';
 
 -- Q14 [DELETE] 취소된 18번 주문의 테스트 상세 항목(36번)을 삭제합니다.
 DELETE FROM order_item
-WHERE order_item_id = 36 AND order_id = 18
-  AND EXISTS (
-      SELECT 1 FROM cafe_order
-      WHERE order_id = 18 AND status = 'CANCELED'
-  );
+WHERE order_item_id = 36 AND order_id = 18;
 
 -- Q15 [인덱스] 고객별 주문 이력 검색과 날짜순 정렬을 위해 복합 인덱스를 생성합니다.
 -- SQLite 전용: IF NOT EXISTS를 사용하여 재실행 시 중복 생성을 방지합니다.
