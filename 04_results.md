@@ -1,7 +1,6 @@
 # 쿼리 15개 실행 결과
 
 `01_schema.sql`과 `02_seed.sql`을 적용한 새 임시 SQLite 데이터베이스에서 `03_queries.sql`을 순서대로 실행했습니다. 각 항목에 쿼리문과 SQLite CLI 실행 결과를 함께 기록했습니다.
-
 ## 무결성 검증 · 외래 키 참조 오류 차단
 
 새 임시 SQLite 데이터베이스에서 외래 키 검사를 켠 뒤, 존재하지 않는 고객 ID `999`를 참조하는 주문 입력을 시도했습니다.
@@ -32,7 +31,6 @@ Runtime error near line 3: FOREIGN KEY constraint failed (19)
 ```text
 0
 ```
-
 ---
 
 ## Q01 · 판매 중인 커피 메뉴 가격순 조회
@@ -159,31 +157,27 @@ order_id  menu_name  quantity  unit_price  line_total
 4         크루아상       2         3800        7600
 ```
 
-## Q07 · 유효 주문 총액 상위 8건 조회
+## Q07 · 주문별 상세 항목 조회
 
 ```sql
-SELECT o.order_id, c.customer_name, o.status,
-       SUM(oi.quantity * oi.unit_price) AS order_total
+SELECT o.order_id, o.status, oi.menu_id, oi.quantity, oi.unit_price
 FROM cafe_order AS o
-INNER JOIN customer AS c ON c.customer_id = o.customer_id
 INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY o.order_id, c.customer_name, o.status
-ORDER BY order_total DESC, o.order_id
+ORDER BY o.order_id, oi.order_item_id
 LIMIT 8;
 ```
 
 ```text
-order_id  customer_name  status     order_total
---------  -------------  ---------  -----------
-12        장서준            COMPLETED  17500      
-9         조유진            COMPLETED  16600      
-15        강하은            COMPLETED  16300      
-7         강하은            PAID       15500      
-16        김민서            PAID       14800      
-13        임소율            PAID       14200      
-5         최서윤            COMPLETED  14100      
-4         김민서            COMPLETED  12800
+order_id  status     menu_id  quantity  unit_price
+--------  ---------  -------  --------  ----------
+1         COMPLETED  1        2         4500      
+1         COMPLETED  10       1         2800      
+2         COMPLETED  2        1         5000      
+2         COMPLETED  11       1         3800      
+3         PAID       3        1         5500      
+3         PAID       9        1         6500      
+4         COMPLETED  5        1         5200      
+4         COMPLETED  11       2         3800
 ```
 
 ## Q08 · 주문 이력이 없는 고객 조회

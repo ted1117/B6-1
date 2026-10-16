@@ -45,15 +45,11 @@ WHERE oi.quantity >= 2
 ORDER BY line_total DESC, oi.order_id
 LIMIT 10;
 
--- Q07 [INNER JOIN] 고객·주문·상세를 연결하여 유효 주문별 총액 상위 8개를 확인합니다.
-SELECT o.order_id, c.customer_name, o.status,
-       SUM(oi.quantity * oi.unit_price) AS order_total
+-- Q07 [INNER JOIN] 주문과 상세 항목을 연결해 주문별 항목을 조회합니다.
+SELECT o.order_id, o.status, oi.menu_id, oi.quantity, oi.unit_price
 FROM cafe_order AS o
-INNER JOIN customer AS c ON c.customer_id = o.customer_id
 INNER JOIN order_item AS oi ON oi.order_id = o.order_id
-WHERE o.status IN ('PAID', 'COMPLETED')
-GROUP BY o.order_id, c.customer_name, o.status
-ORDER BY order_total DESC, o.order_id
+ORDER BY o.order_id, oi.order_item_id
 LIMIT 8;
 
 -- Q08 [LEFT JOIN] 주문 이력이 없는 고객도 빠뜨리지 않고 찾아냅니다.
