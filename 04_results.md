@@ -2,6 +2,39 @@
 
 `01_schema.sql`과 `02_seed.sql`을 적용한 새 임시 SQLite 데이터베이스에서 `03_queries.sql`을 순서대로 실행했습니다. 각 항목에 쿼리문과 SQLite CLI 실행 결과를 함께 기록했습니다.
 
+## 무결성 검증 · 외래 키 참조 오류 차단
+
+새 임시 SQLite 데이터베이스에서 외래 키 검사를 켠 뒤, 존재하지 않는 고객 ID `999`를 참조하는 주문 입력을 시도했습니다.
+
+```sql
+PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys;
+INSERT INTO cafe_order (customer_id, ordered_at, status)
+VALUES (999, '2026-10-16 12:00:00', 'PAID');
+```
+
+`PRAGMA foreign_keys` 결과:
+
+```text
+foreign_keys
+------------
+1
+```
+
+잘못된 주문 입력 결과:
+
+```text
+Runtime error near line 3: FOREIGN KEY constraint failed (19)
+```
+
+입력 실패 후 `customer_id = 999`인 주문은 저장되지 않았습니다.
+
+```text
+0
+```
+
+---
+
 ## Q01 · 판매 중인 커피 메뉴 가격순 조회
 
 ```sql
