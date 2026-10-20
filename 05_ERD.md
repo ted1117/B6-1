@@ -2,9 +2,9 @@
 
 ```mermaid
 erDiagram
-    CUSTOMER ||--o{ CAFE_ORDER : places
-    CAFE_ORDER ||--|{ ORDER_ITEM : contains
-    MENU ||--o{ ORDER_ITEM : appears_in
+    CUSTOMER ||--o{ CAFE_ORDER
+    CAFE_ORDER ||--|{ ORDER_ITEM
+    MENU ||--o{ ORDER_ITEM
 
     CUSTOMER {
       INTEGER customer_id PK
@@ -33,5 +33,7 @@ erDiagram
       INTEGER unit_price
     }
 ```
+
+![asdf](assets/B6-1.drawio.svg)
 
 1:N 관계는 고객→주문, 주문→주문상세, 메뉴→주문상세의 3개입니다. `cafe_order`와 `menu`는 `order_item`을 거쳐 다대다로 연결됩니다.
