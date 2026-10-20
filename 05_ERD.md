@@ -9,12 +9,12 @@ erDiagram
     CUSTOMER {
       INTEGER customer_id PK
       TEXT customer_name
-      TEXT email UK
+      TEXT phone
       TEXT joined_at
     }
     MENU {
       INTEGER menu_id PK
-      TEXT menu_name UK
+      TEXT menu_name
       TEXT category
       INTEGER price
       INTEGER is_available
